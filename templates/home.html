@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}UptimeLite — simple uptime monitoring{% endblock %}
+{% block content %}
+<div class="text-center py-16">
+  <h1 class="text-4xl font-bold mb-4">Know when your site is down. In seconds.</h1>
+  <p class="text-slate-600 mb-8 max-w-xl mx-auto">
+    UptimeLite pings your URLs every minute and emails you the moment they fail.
+    Built for indie devs and small teams who don't want Datadog's complexity.
+  </p>
+  <div class="space-x-3">
+    <a href="/register" class="bg-blue-600 text-white px-5 py-2 rounded font-medium">Start free</a>
+    <a href="/login" class="border px-5 py-2 rounded font-medium">Login</a>
+  </div>
+  <div class="mt-16 grid grid-cols-3 gap-4 max-w-2xl mx-auto text-sm">
+    <div class="bg-white p-4 rounded shadow-sm"><div class="font-bold text-2xl">$9</div><div class="text-slate-500">/mo flat</div></div>
+    <div class="bg-white p-4 rounded shadow-sm"><div class="font-bold text-2xl">60s</div><div class="text-slate-500">checks</div></div>
+    <div class="bg-white p-4 rounded shadow-sm"><div class="font-bold text-2xl">0</div><div class="text-slate-500">config needed</div></div>
+  </div>
+</div>
+{% endblock %}

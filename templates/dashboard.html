@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — UptimeLite{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Your Monitors</h1>
+  <span class="text-sm text-slate-500">{{ count }}/{{ limit }} used ({{ user.plan }} plan)</span>
+</div>
+
+{% if error %}<p class="text-red-600 text-sm mb-3">{{ error }}</p>{% endif %}
+
+<form method="post" action="/monitors" class="bg-white p-4 rounded shadow-sm mb-6 grid grid-cols-4 gap-3 items-end">
+  <div><label class="text-xs text-slate-500">Name</label><input name="name" required placeholder="My API" class="w-full border rounded px-2 py-1"></div>
+  <div class="col-span-2"><label class="text-xs text-slate-500">URL</label><input name="url" required placeholder="https://api.example.com/health" class="w-full border rounded px-2 py-1"></div>
+  <div><label class="text-xs text-slate-500">Interval (s)</label>
+    <select name="interval" class="w-full border rounded px-2 py-1">
+      <option value="30">30</option><option value="60" selected>60</option><option value="300">300</option><option value="900">900</option>
+    </select>
+  </div>
+  <button class="col-span-4 bg-blue-600 text-white py-2 rounded font-medium">Add monitor</button>
+</form>
+
+<div class="space-y-3">
+  {% for m in monitors %}
+  <div class="bg-white p-4 rounded shadow-sm flex items-center justify-between">
+    <div>
+      <div class="font-medium">{{ m.name }}</div>
+      <div class="text-xs text-slate-500 break-all">{{ m.url }}</div>
+      <div class="text-xs mt-1">
+        {% if m.last_status == 1 %}<span class="text-green-600 font-medium">UP</span>
+        {% elif m.last_status == 0 %}<span class="text-red-600 font-medium">DOWN</span>
+        {% else %}<span class="text-slate-400">pending</span>{% endif %}
+        {% if m.last_latency %}· {{ m.last_latency }}s{% endif %}
+        {% if m.uptime24 is not none %}· 24h up {{ m.uptime24 }}%{% endif %}
+        · every {{ m.interval_seconds }}s
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <a href="/monitors/{{ m.id }}" class="text-xs border px-2 py-1 rounded">Details</a>
+      <form method="post" action="/monitors/{{ m.id }}/toggle" class="inline">
+        <button class="text-xs border px-2 py-1 rounded">{{ "Pause" if m.active else "Resume" }}</button>
+      </form>
+      <form method="post" action="/monitors/{{ m.id }}/delete" class="inline">
+        <button class="text-xs border px-2 py-1 rounded text-red-600">Delete</button>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <p class="text-slate-500">No monitors yet. Add your first one above.</p>
+  {% endfor %}
+</div>
+
+<div class="mt-10 bg-white p-4 rounded shadow-sm">
+  <h2 class="font-bold mb-2">Upgrade</h2>
+  <p class="text-sm text-slate-600">Free = 5 monitors. Pro = 50 ($9/mo). Team = 500 ($29/mo).
+  Stripe checkout coming next — for now email <b>hi@uptimelite.app</b> to upgrade and I'll flip your plan manually.</p>
+</div>
+{% endblock %}
