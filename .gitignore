@@ -1,4 +1,9 @@
-uptime.db
+*.db
 __pycache__/
 *.pyc
-*.db
+.venv/
+venv/
+boot.log
+cj.txt
+*.log
+.env
