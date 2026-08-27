@@ -2,4 +2,4 @@ fastapi
 uvicorn[standard]
 python-multipart
 jinja2
-# stripe  # uncomment when you wire payments (optional, not needed to run)
+# stripe  # uncomment when wiring production payments — pip install stripe
