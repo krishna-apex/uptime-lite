@@ -37,6 +37,7 @@ def init_db():
             user_id INTEGER NOT NULL,
             name TEXT NOT NULL,
             url TEXT NOT NULL,
+            slug TEXT,
             interval_seconds INTEGER NOT NULL DEFAULT 60,
             active INTEGER NOT NULL DEFAULT 1,
             last_status INTEGER,
@@ -54,11 +55,32 @@ def init_db():
             error TEXT,
             checked_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            user_id INTEGER PRIMARY KEY,
+            stripe_sub_id TEXT,
+            plan TEXT,
+            status TEXT,
+            renews_at TEXT
+        );
         CREATE INDEX IF NOT EXISTS idx_checks_monitor ON checks(monitor_id, checked_at);
         """
     )
     conn.commit()
     conn.close()
+    # Migrate: add slug column if missing (for old databases)
+    try:
+        conn = get_conn()
+        conn.execute("SELECT slug FROM monitors LIMIT 1")
+        conn.close()
+    except Exception:
+        try:
+            conn = get_conn()
+            conn.execute("ALTER TABLE monitors ADD COLUMN slug TEXT")
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+    print("[DB] initialized at", DB_PATH)
 
 
 # ---------- auth ----------
@@ -134,14 +156,84 @@ def set_plan(user_id: int, plan: str):
     conn.close()
 
 
+def set_stripe_customer(user_id: int, customer_id: str):
+    conn = get_conn()
+    conn.execute("UPDATE users SET stripe_customer_id=? WHERE id=?", (customer_id, user_id))
+    conn.commit()
+    conn.close()
+
+
+def upsert_subscription(user_id, stripe_sub_id, plan, status, renews_at):
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO subscriptions (user_id, stripe_sub_id, plan, status, renews_at) VALUES (?,?,?,?,?) "
+        "ON CONFLICT(user_id) DO UPDATE SET stripe_sub_id=?, plan=?, status=?, renews_at=?",
+        (user_id, stripe_sub_id, plan, status, renews_at, stripe_sub_id, plan, status, renews_at),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_subscription(user_id):
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM subscriptions WHERE user_id=?", (user_id,)).fetchone()
+    conn.close()
+    return row
+
+
+def set_subscription_status(user_id, status):
+    conn = get_conn()
+    conn.execute("UPDATE subscriptions SET status=? WHERE user_id=?", (status, user_id))
+    conn.commit()
+    conn.close()
+
+
 # ---------- monitors ----------
-def add_monitor(user_id, name, url, interval_seconds=60):
+def make_slug(text):
+    """Generate a URL-safe slug from text."""
+    import re
+    text = text.lower().strip()
+    text = re.sub(r'[^a-z0-9]+', '-', text)
+    text = re.sub(r'^-+|-+$', '', text)
+    if not text:
+        text = "monitor"
+    return text
+
+
+def unique_slug(user_id, base_slug):
+    """Ensure slug is unique within a user's monitors."""
+    conn = get_conn()
+    existing = conn.execute(
+        "SELECT slug FROM monitors WHERE user_id=? AND slug=?", (user_id, base_slug)
+    ).fetchall()
+    conn.close()
+    if not existing:
+        return base_slug
+    for i in range(2, 100):
+        candidate = f"{base_slug}-{i}"
+        conn = get_conn()
+        check = conn.execute(
+            "SELECT 1 FROM monitors WHERE user_id=? AND slug=?", (user_id, candidate)
+        ).fetchone()
+        conn.close()
+        if not check:
+            return candidate
+    return f"{base_slug}-{secrets.token_hex(4)}"
+
+
+def add_monitor(user_id, name, url, interval_seconds=60, slug=None):
     now = datetime.now(timezone.utc)
+    if slug:
+        slug = make_slug(slug)
+    else:
+        slug = make_slug(name)
+    # ensure uniqueness — append short suffix if taken
+    slug = unique_slug(user_id, slug)
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO monitors (user_id, name, url, interval_seconds, next_check, created_at) VALUES (?,?,?,?,?,?)",
-        (user_id, name, url, interval_seconds, now.isoformat(), now.isoformat()),
+        "INSERT INTO monitors (user_id, name, url, slug, interval_seconds, next_check, created_at) VALUES (?,?,?,?,?,?,?)",
+        (user_id, name, url, slug, interval_seconds, now.isoformat(), now.isoformat()),
     )
     mid = cur.lastrowid
     conn.commit()
@@ -159,6 +251,13 @@ def list_monitors(user_id):
 def get_monitor(mid):
     conn = get_conn()
     row = conn.execute("SELECT * FROM monitors WHERE id=?", (mid,)).fetchone()
+    conn.close()
+    return row
+
+
+def get_monitor_by_slug(slug):
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM monitors WHERE slug=?", (slug,)).fetchone()
     conn.close()
     return row
 
@@ -197,6 +296,13 @@ def get_user_by_id(user_id):
     return row
 
 
+def get_user_by_stripe_customer(customer_id):
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM users WHERE stripe_customer_id=?", (customer_id,)).fetchone()
+    conn.close()
+    return row
+
+
 def uptime_pct(monitor_id, hours=24):
     since = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
     conn = get_conn()
@@ -208,3 +314,13 @@ def uptime_pct(monitor_id, hours=24):
     if not row or row["c"] == 0:
         return None
     return round(100.0 * row["s"] / row["c"], 1)
+
+
+def get_recent_checks(monitor_id, limit=30):
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM checks WHERE monitor_id=? ORDER BY checked_at DESC LIMIT ?",
+        (monitor_id, limit),
+    ).fetchall()
+    conn.close()
+    return rows
