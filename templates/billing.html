@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Billing — UptimeLite{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <h1 class="text-2xl font-bold mb-6">Billing</h1>
+
+  <!-- Current plan -->
+  <div class="bg-white rounded-lg border p-6 mb-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="font-medium text-slate-500 text-sm uppercase">Current plan</div>
+        <div class="text-xl font-bold mt-1">
+          {% if user.plan == 'free' %}
+            Free — 5 monitors
+          {% else %}
+            {{ user.plan|title }} — {{ PLAN_LIMITS[user.plan] if user.plan in PLAN_LIMITS else 5 }} monitors
+          {% endif %}
+        </div>
+        {% if subscription %}
+        <div class="text-sm text-slate-500 mt-1">
+          Status: {{ subscription.status }} · Renews: {{ subscription.renews_at[:10] if subscription.renews_at else '—' }}
+        </div>
+        {% endif %}
+      </div>
+      <div class="text-2xl font-bold">
+        {% if user.plan == 'free' %}
+          $0
+        {% elif user.plan == 'pro' %}
+          $9/mo
+        {% elif user.plan == 'team' %}
+          $29/mo
+        {% else %}
+          $0
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if error %}
+  <div class="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 text-sm mb-4">
+    {{ error }}
+  </div>
+  {% endif %}
+
+  {% if success %}
+  <div class="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 text-sm mb-4">
+    Payment successful! Your plan has been upgraded.
+  </div>
+  {% endif %}
+
+  <!-- Upgrade form -->
+  <div class="bg-white rounded-lg border p-6">
+    <h2 class="font-bold mb-4">Upgrade your plan</h2>
+    <p class="text-sm text-slate-600 mb-4">
+      Stripe checkout will redirect you to complete payment. After checkout, your plan
+      is upgraded automatically via webhook.
+    </p>
+
+    <form method="post" action="/billing/checkout" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Plan</label>
+        <select name="plan" class="w-full border rounded px-3 py-2">
+          <option value="pro">Pro — $9/mo ($90/yr) — 50 monitors, ad-free, custom domain</option>
+          <option value="team">Team — $29/mo ($290/yr) — 500 monitors, SMS alerts, API</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Billing</label>
+        <select name="interval" class="w-full border rounded px-3 py-2">
+          <option value="monthly">Monthly</option>
+          <option value="annual">Annual (2 months free)</option>
+        </select>
+      </div>
+      <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded font-medium hover:bg-blue-700">
+        Continue to Stripe Checkout
+      </button>
+    </form>
+
+    <div class="mt-4 text-xs text-slate-400 text-center">
+      Powered by Stripe. Your payment info is never stored on our servers.
+    </div>
+  </div>
+
+  <!-- Free tier info -->
+  <div class="bg-slate-50 rounded-lg border p-6 mt-6">
+    <div class="text-sm font-medium text-slate-600">
+      Free plan is always available — no credit card needed.
+      {% if user.plan != 'free' %}
+      <form method="post" action="/billing/checkout" class="mt-2">
+        <input type="hidden" name="plan" value="pro">
+        <input type="hidden" name="interval" value="monthly">
+        <!-- Downgrade handled via Stripe customer portal or email -->
+        <button type="button" class="text-xs text-slate-500 underline"
+                onclick="alert('To downgrade, cancel your subscription in Stripe. Email hi@uptimelite.app for help.')">
+          Downgrade to free
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

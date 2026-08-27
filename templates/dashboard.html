@@ -32,6 +32,9 @@
         {% if m.last_latency %}· {{ m.last_latency }}s{% endif %}
         {% if m.uptime24 is not none %}· 24h up {{ m.uptime24 }}%{% endif %}
         · every {{ m.interval_seconds }}s
+        {% if m.slug %}
+        · <a href="/status/{{ m.slug }}" class="text-blue-600" target="_blank">status page →</a>
+        {% endif %}
       </div>
     </div>
     <div class="flex gap-2">
@@ -51,7 +54,7 @@
 
 <div class="mt-10 bg-white p-4 rounded shadow-sm">
   <h2 class="font-bold mb-2">Upgrade</h2>
-  <p class="text-sm text-slate-600">Free = 5 monitors. Pro = 50 ($9/mo). Team = 500 ($29/mo).
-  Stripe checkout coming next — for now email <b>hi@uptimelite.app</b> to upgrade and I'll flip your plan manually.</p>
+  <p class="text-sm text-slate-600 mb-2">Free = 5 monitors. Pro = 50 ($9/mo) with ad-free status pages, 30s checks, and custom domains. Team = 500 ($29/mo) with SMS alerts.</p>
+  <a href="/pricing" class="text-blue-600 font-medium underline">See all plans →</a>
 </div>
 {% endblock %}

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ monitor.name }} — Status{% endblock %}</title>
+  <meta name="description" content="Live status page for {{ monitor.name }}. Updates every {{ monitor.interval_seconds }} seconds.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <meta name="color-scheme" content="light">
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen antialiased">
+  <header class="border-b bg-white shadow-sm">
+    <div class="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+          {{ monitor.name[0]|upper if monitor.name else '?' }}
+        </div>
+        <div>
+          <div class="font-bold text-lg">{{ monitor.name }}</div>
+          <div class="text-xs text-slate-500">Public status page</div>
+        </div>
+      </div>
+      <div class="text-sm text-slate-500">
+        {% if monitor.last_status == 1 %}
+          <span class="text-green-600 font-medium">● All systems operational</span>
+        {% elif monitor.last_status == 0 %}
+          <span class="text-red-600 font-medium">● Service disrupted</span>
+        {% else %}
+          <span class="text-slate-400">● Pending first check</span>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% if adsense_id %}
+  <!-- Google AdSense (auto-ads) — standard disclosed integration -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_id }}"
+          crossorigin="anonymous"></script>
+  {% endif %}
+
+  <main class="max-w-3xl mx-auto px-4 py-8">
+    <!-- Ad slot: top of status page -->
+    {% if adsense_id %}
+    <div class="mb-6 text-center">
+      <ins class="adsbygoogle"
+           style="display:block; text-align:center; padding:20px;"
+           data-ad-layout="in-article"
+           data-ad-format="fluid"
+           data-ad-client="{{ adsense_id }}"
+           data-ad-slot="auto"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+    {% endif %}
+
+    <!-- Uptime summary -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded-lg border p-4 text-center">
+        <div class="text-xs text-slate-500 uppercase font-medium">24h uptime</div>
+        <div class="text-2xl font-bold mt-1">
+          {% if uptime24 is not none %}{{ uptime24 }}%{% else %}—{% endif %}
+        </div>
+      </div>
+      <div class="bg-white rounded-lg border p-4 text-center">
+        <div class="text-xs text-slate-500 uppercase font-medium">7d uptime</div>
+        <div class="text-2xl font-bold mt-1">
+          {% if uptime7 is not none %}{{ uptime7 }}%{% else %}—{% endif %}
+        </div>
+      </div>
+      <div class="bg-white rounded-lg border p-4 text-center">
+        <div class="text-xs text-slate-500 uppercase font-medium">Endpoint</div>
+        <div class="text-sm font-mono mt-1 break-all">{{ monitor.url }}</div>
+      </div>
+    </div>
+
+    <!-- Check history -->
+    <div class="bg-white rounded-lg border mb-6">
+      <div class="px-4 py-3 border-b font-medium text-sm">Recent checks</div>
+      <div class="divide-y">
+        {% for c in checks %}
+        <div class="px-4 py-2.5 text-sm flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            {% if c.status == 1 %}
+              <span class="text-green-600 font-medium">UP</span>
+            {% else %}
+              <span class="text-red-600 font-medium">DOWN</span>
+            {% endif %}
+            {% if c.status_code %}(HTTP {{ c.status_code }}){% endif %}
+            {% if c.latency %}· {{ "%.2f"|format(c.latency) }}s{% endif %}
+            {% if c.error %}— <span class="text-slate-500">{{ c.error }}</span>{% endif %}
+          </div>
+          <span class="text-slate-400 text-xs">
+            {{ c.checked_at[:19].replace("T", " ") }} UTC
+          </span>
+        </div>
+        {% else %}
+        <div class="px-4 py-3 text-sm text-slate-500">No checks yet — first ping in ~15 seconds.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Ad slot: middle of page -->
+    {% if adsense_id %}
+    <div class="mb-6 text-center">
+      <ins class="adsbygoogle"
+           style="display:block; text-align:center; padding:20px;"
+           data-ad-client="{{ adsense_id }}"
+           data-ad-slot="auto"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+    {% endif %}
+
+    <!-- Upgrade prompt for owners of the status page -->
+    <div class="text-center text-sm text-slate-500 border-t pt-6">
+      <p>Status page powered by <a href="/" class="font-medium text-blue-600">UptimeLite</a>.</p>
+      <p class="mt-1">Running your own service? <a href="/register" class="text-blue-600">Monitor your site in 10 seconds</a>.</p>
+    </div>
+
+    <!-- Ad slot: bottom of page -->
+    {% if adsense_id %}
+    <div class="mt-6 text-center">
+      <ins class="adsbygoogle"
+           style="display:block; text-align:center; padding:20px;"
+           data-ad-layout="in-article"
+           data-ad-format="fluid"
+           data-ad-client="{{ adsense_id }}"
+           data-ad-slot="auto"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+    {% endif %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Pricing — UptimeLite{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto text-center">
+  <h1 class="text-3xl font-bold mb-3">Simple pricing for indie hackers</h1>
+  <p class="text-slate-600 mb-8 max-w-xl mx-auto">
+    One flat rate. No credit card required for free. Cancel anytime.
+  </p>
+
+  <div class="grid md:grid-cols-3 gap-4 mb-12">
+    <!-- Free -->
+    <div class="border border-slate-200 rounded-lg p-6 text-left">
+      <div class="text-xl font-bold">Free</div>
+      <div class="mt-3 text-3xl font-bold">$0<span class="text-sm text-slate-500">/mo</span></div>
+      <ul class="mt-4 space-y-2 text-sm text-slate-600">
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> {{ FREE_LIMIT }} monitors</li>
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> 60-second checks</li>
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> Email alerts</li>
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> Public status pages</li>
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> <span class="line-through text-slate-400">Ad-free status pages</span></li>
+      </ul>
+      {% if user and user['plan'] == "free" %}
+      <button class="mt-4 w-full bg-slate-900 text-white py-2 rounded font-medium" disabled>Current plan</button>
+      {% elif user %}
+      <a href="/billing" class="mt-4 block w-full bg-blue-600 text-white py-2 rounded font-medium hover:bg-blue-700">Upgrade</a>
+      {% else %}
+      <a href="/register" class="mt-4 block w-full bg-blue-600 text-white py-2 rounded font-medium hover:bg-blue-700">Get started free</a>
+      {% endif %}
+    </div>
+
+    <!-- Pro -->
+    <div class="border-2 border-blue-600 rounded-lg p-6 text-left">
+      <div class="text-xl font-bold">Pro</div>
+      <div class="mt-3 text-3xl font-bold">$9<span class="text-sm text-slate-500">/mo</span></div>
+      <ul class="mt-4 space-y-2 text-sm text-slate-600">
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> {{ PLAN_LIMITS.pro }} monitors</li>
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> 30-second checks</li>
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> Email + Slack alerts</li>
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> Ad-free status pages</li>
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> Custom domain status pages</li>
+      </ul>
+      {% if user and user['plan'] == "pro" %}
+      <button class="mt-4 w-full bg-slate-100 text-slate-600 py-2 rounded font-medium" disabled>Current plan</button>
+      {% else %}
+      <a href="/billing" class="mt-4 block w-full bg-blue-600 text-white py-2 rounded font-medium hover:bg-blue-700">Upgrade to Pro</a>
+      {% endif %}
+    </div>
+
+    <!-- Team -->
+    <div class="border border-slate-200 rounded-lg p-6 text-left">
+      <div class="text-xl font-bold">Team</div>
+      <div class="mt-3 text-3xl font-bold">$29<span class="text-sm text-slate-500">/mo</span></div>
+      <ul class="mt-4 space-y-2 text-sm text-slate-600">
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> {{ PLAN_LIMITS.team }} monitors</li>
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> 15-second checks</li>
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> Email + Slack + SMS</li>
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> Ad-free status pages</li>
+        <li class="flex items-center gap-2"><span class="text-green-600">✓</span> Custom domains + API</li>
+      </ul>
+      {% if user and user['plan'] == "team" %}
+      <button class="mt-4 w-full bg-slate-100 text-slate-600 py-2 rounded font-medium" disabled>Current plan</button>
+      {% else %}
+      <a href="/billing" class="mt-4 block w-full bg-slate-900 text-white py-2 rounded font-medium hover:bg-black">Upgrade to Team</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="text-center text-xs text-slate-400">
+    <p>Annual billing available (2 months free). Questions? <a href="mailto:hi@uptimelite.app" class="text-slate-600">hi@uptimelite.app</a></p>
+  </div>
+</div>
+{% endblock %}
